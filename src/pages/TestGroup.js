@@ -1,26 +1,41 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import GoBack from "../components/GoBack";
-import {
-  createTestGroup,
-  deleteTestGroup,
-  getTestGroups,
-  searchTestGroups,
-  updateTestGroup,
-} from "../services/testGroupService";
+// import {
+//   createTestGroup,
+//   deleteTestGroup,
+//   getTestGroups,
+//   searchTestGroups,
+//   updateTestGroup,
+// } from "../services/testGroupService";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
+
+const hardcodedTestGroups = [
+  { _id: "group-001", name: "Hematology", cost: 650 },
+  { _id: "group-002", name: "Biochemistry", cost: 900 },
+  { _id: "group-003", name: "Serology", cost: 750 },
+  { _id: "group-004", name: "Microbiology", cost: 850 },
+  { _id: "group-005", name: "Clinical Pathology", cost: 500 },
+  { _id: "group-006", name: "Hormone Profile", cost: 1200 },
+  { _id: "group-007", name: "Lipid Profile", cost: 700 },
+  { _id: "group-008", name: "Renal Function", cost: 800 },
+  { _id: "group-009", name: "Thyroid Profile", cost: 600 },
+  { _id: "group-010", name: "Cardiac Markers", cost: 1500 },
+  { _id: "group-011", name: "Coagulation", cost: 550 },
+  { _id: "group-012", name: "Immunology", cost: 1000 },
+];
 
 const TestGroup = () => {
   const [groupName, setGroupName] = useState("");
   const [subGroup, setSubGroup] = useState(false);
   const [cost, setCost] = useState("");
-  const [testGroups, setTestGroups] = useState([]);
+  const [testGroups, setTestGroups] = useState(hardcodedTestGroups);
   const [searchQuery, setSearchQuery] = useState("");
   const [editGroupId, setEditGroupId] = useState(null);
   const [pageSize, setPageSize] = useState(10);
-  const [totalTestGroups, setTotalTestGroups] = useState(0);
-  const [editIndex, setEditIndex] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // const [totalTestGroups, setTotalTestGroups] = useState(0);
+  const [isLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(true);
 
   const groupNameRef = useRef(null);
 
@@ -31,8 +46,10 @@ const TestGroup = () => {
     setEditGroupId(null);
   };
 
-  const handleEditGroup = (index, group) => {
-    const selectedGroup = testGroups[index];
+  const handleEditGroup = (group) => {
+    const selectedGroup = testGroups.find(
+      (testGroup) => testGroup._id === group?._id
+    );
 
     if (!selectedGroup) {
       return;
@@ -41,7 +58,6 @@ const TestGroup = () => {
 
     setGroupName(group.name || "");
     setCost(group.cost || "");
-    setEditIndex(index);
     setEditGroupId(group._id);
   };
 
@@ -60,92 +76,121 @@ const TestGroup = () => {
     };
 
     if (editGroupId) {
-      try {
-        const response = await updateTestGroup(editGroupId, groupData);
-        console.log("update response: ", response);
-        if (response.status === 200 || response.status === 201) {
-          const updatedTestGroups = [...testGroups];
-          updatedTestGroups[editIndex] = response?.data?.data;
-          setTestGroups(updatedTestGroups);
+      // try {
+      //   const response = await updateTestGroup(editGroupId, groupData);
+      //   console.log("update response: ", response);
+      //   if (response.status === 200 || response.status === 201) {
+      //     setTestGroups((prevGroups) =>
+      //       prevGroups.map((group) =>
+      //         group._id === editGroupId ? response?.data?.data : group
+      //       )
+      //     );
 
-          toast.success("Group updated successfully");
-          handleClear();
-        } else {
-          console.error("Failed to update group", response);
-          toast.error(response?.data?.message || "Failed to update group");
-        }
-      } catch (error) {
-        toast.error(
-          error.message || error?.data?.message || "Error updating group"
-        );
-        console.error("Error updating group", error);
-      }
+      //     toast.success("Group updated successfully");
+      //     handleClear();
+      //   } else {
+      //     console.error("Failed to update group", response);
+      //     toast.error(response?.data?.message || "Failed to update group");
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error.message || error?.data?.message || "Error updating group"
+      //   );
+      //   console.error("Error updating group", error);
+      // }
+
+      setTestGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group._id === editGroupId ? { ...group, ...groupData } : group
+        )
+      );
+      toast.success("Group updated successfully");
+      handleClear();
     } else {
-      try {
-        const response = await createTestGroup(groupData);
-        console.log("create response: ", response);
+      // try {
+      //   const response = await createTestGroup(groupData);
+      //   console.log("create response: ", response);
 
-        if (response.status === 200 || response.status === 201) {
-          setTestGroups([response?.data?.data, ...testGroups]);
-          fetchAllGroups();
-          handleClear();
-          toast.success("Group added successfully");
-        } else {
-          console.error("Failed to add group", response);
-        }
-      } catch (error) {
-        toast.error(
-          error.message || error?.data?.message || "Error adding group"
-        );
-        console.error("Error adding group", error);
-      }
+      //   if (response.status === 200 || response.status === 201) {
+      //     setTestGroups([response?.data?.data, ...testGroups]);
+      //     fetchAllGroups();
+      //     handleClear();
+      //     toast.success("Group added successfully");
+      //   } else {
+      //     console.error("Failed to add group", response);
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error.message || error?.data?.message || "Error adding group"
+      //   );
+      //   console.error("Error adding group", error);
+      // }
+
+      setTestGroups([
+        { _id: `group-${Date.now()}`, ...groupData },
+        ...testGroups,
+      ]);
+      handleClear();
+      toast.success("Group added successfully");
     }
   };
 
   const handleDeleteGroup = async (id, name) => {
-    try {
-      const response = await deleteTestGroup(id);
-      if (response.status === 200) {
-        setTestGroups(
-          testGroups.length > 0
-            ? testGroups.filter((group) => group._id !== id)
-            : []
-        );
-        toast.success(`${name} deleted successfully`);
-        // fetchAllGroups(searchQuery);
-      } else {
-        console.error("Failed to delete group", response);
-        toast.error(response?.data?.message || `Failed to delete ${name}`);
-      }
-    } catch (error) {
-      console.error("Error deleting group", error);
-      toast.error(
-        error.message || error?.data?.message || "Error deleting group"
-      );
-    }
+    // try {
+    //   const response = await deleteTestGroup(id);
+    //   if (response.status === 200) {
+    //     setTestGroups(
+    //       testGroups.length > 0
+    //         ? testGroups.filter((group) => group._id !== id)
+    //         : []
+    //     );
+    //     toast.success(`${name} deleted successfully`);
+    //     // fetchAllGroups(searchQuery);
+    //   } else {
+    //     console.error("Failed to delete group", response);
+    //     toast.error(response?.data?.message || `Failed to delete ${name}`);
+    //   }
+    // } catch (error) {
+    //   console.error("Error deleting group", error);
+    //   toast.error(
+    //     error.message || error?.data?.message || "Error deleting group"
+    //   );
+    // }
+
+    setTestGroups(
+      testGroups.length > 0 ? testGroups.filter((group) => group._id !== id) : []
+    );
+    toast.success(`${name} deleted successfully`);
   };
 
-  const fetchAllGroups = async (search = "") => {
-    setIsLoading(true);
-    try {
-      const response = await getTestGroups(search, pageSize);
-      console.log("get testgroups response", response);
-      if (response.status === 200) {
-        setTestGroups(response?.data?.data?.testGroups || []);
-        setTotalTestGroups(response?.data?.data?.totalItems || 0);
-      } else {
-        console.log("Failed to fetch groups", response);
-      }
-    } catch (error) {
-      console.error("Error searching groups", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchAllGroups = async (search = "") => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await getTestGroups(search, pageSize);
+  //     console.log("get testgroups response", response);
+  //     if (response.status === 200) {
+  //       setTestGroups(response?.data?.data?.testGroups || []);
+  //       setTotalTestGroups(response?.data?.data?.totalItems || 0);
+  //     } else {
+  //       console.log("Failed to fetch groups", response);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error searching groups", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleSearch = async (e) => {
     setSearchQuery(e.target.value);
+    setPageSize(10);
   };
+
+  const filteredTestGroups = testGroups.filter((group) =>
+    group.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const displayedTestGroups = filteredTestGroups.slice(0, pageSize);
+  const totalTestGroups = filteredTestGroups.length;
 
   const handleLoadMore = () => {
     if (pageSize < totalTestGroups) {
@@ -153,13 +198,13 @@ const TestGroup = () => {
     }
   };
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchAllGroups(searchQuery);
-    }, 500);
+  // useEffect(() => {
+  //   const delayDebounceFn = setTimeout(() => {
+  //     fetchAllGroups(searchQuery);
+  //   }, 500);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, pageSize]);
+  //   return () => clearTimeout(delayDebounceFn);
+  // }, [searchQuery, pageSize]);
 
   return (
     <div className="bg-gradient-to-r bg-gray-200 text-black min-h-screen py-10">
@@ -267,8 +312,8 @@ const TestGroup = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {testGroups?.length > 0 ? (
-                    testGroups?.map((group, index) => (
+                  {displayedTestGroups?.length > 0 ? (
+                    displayedTestGroups?.map((group, index) => (
                       <tr
                         key={group._id}
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -289,7 +334,7 @@ const TestGroup = () => {
                         <td className="px-4 py-2 text-center border-b border-gray-300">
                           <button
                             type="button"
-                            onClick={() => handleEditGroup(index, group)}
+                            onClick={() => handleEditGroup(group)}
                             className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300 mr-2"
                           >
                             Edit
