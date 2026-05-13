@@ -1,26 +1,37 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  getCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  searchCategories,
-} from "../services/categoryService";
+import React, { useRef, useState } from "react";
+// import {
+//   getCategories,
+//   createCategory,
+//   updateCategory,
+//   deleteCategory,
+//   searchCategories,
+// } from "../services/categoryService";
 import { toast } from "react-toastify";
 import GoBack from "../components/GoBack";
 import { ClipLoader } from "react-spinners";
 
+const hardcodedCategories = [
+  { _id: "category-001", name: "General" },
+  { _id: "category-002", name: "Emergency" },
+  { _id: "category-003", name: "Corporate" },
+  { _id: "category-004", name: "Senior Citizen" },
+  { _id: "category-005", name: "Insurance" },
+  { _id: "category-006", name: "Out Patient" },
+  { _id: "category-007", name: "In Patient" },
+  { _id: "category-008", name: "Health Camp" },
+  { _id: "category-009", name: "Routine Checkup" },
+  { _id: "category-010", name: "Follow Up" },
+  { _id: "category-011", name: "Referral" },
+  { _id: "category-012", name: "Home Collection" },
+];
+
 const Category = () => {
   const [categoryName, setCategoryName] = useState("");
-  const [allCategories, setAllCategories] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
+  const [allCategories, setAllCategories] = useState(hardcodedCategories);
   const [updateId, setUpdateId] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [totalCategories, setTotalCategories] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const categoryNameRef = useRef(null);
 
@@ -33,100 +44,122 @@ const Category = () => {
     const categoryData = { name: categoryName };
 
     if (updateId) {
-      try {
-        const response = await updateCategory(categoryData, updateId);
-        if (response.status === 200 || response.status === 201) {
-          fetchCategories(searchTerm);
-          toast.success("Category updated successfully");
-          handleClear();
-        } else {
-          console.error("Failed to update category", response);
-          toast.error(response?.data?.message || "Failed to update category");
-        }
-      } catch (error) {
-        toast.error(
-          error.message || error?.data?.message || "Error updating category"
-        );
-        console.error("Error while updating category", error);
-      }
-    } else {
-      try {
-        const response = await createCategory(categoryData);
-        console.log("createCategory response: ", response);
+      // try {
+      //   const response = await updateCategory(categoryData, updateId);
+      //   if (response.status === 200 || response.status === 201) {
+      //     fetchCategories(searchTerm);
+      //     toast.success("Category updated successfully");
+      //     handleClear();
+      //   } else {
+      //     console.error("Failed to update category", response);
+      //     toast.error(response?.data?.message || "Failed to update category");
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error.message || error?.data?.message || "Error updating category"
+      //   );
+      //   console.error("Error while updating category", error);
+      // }
 
-        if (response.status === 200 || response.status === 201) {
-          fetchCategories();
-          handleClear();
-          toast.success("Category added successfully");
-        } else {
-          toast.error("Failed to add category");
-        }
-      } catch (error) {
-        toast.error("Error while adding category");
-        console.error("Error adding category", error);
-      }
+      setAllCategories((prevCategories) =>
+        prevCategories.map((category) =>
+          category._id === updateId ? { ...category, ...categoryData } : category
+        )
+      );
+      toast.success("Category updated successfully");
+      handleClear();
+    } else {
+      // try {
+      //   const response = await createCategory(categoryData);
+      //   console.log("createCategory response: ", response);
+      //
+      //   if (response.status === 200 || response.status === 201) {
+      //     fetchCategories();
+      //     handleClear();
+      //     toast.success("Category added successfully");
+      //   } else {
+      //     toast.error("Failed to add category");
+      //   }
+      // } catch (error) {
+      //   toast.error("Error while adding category");
+      //   console.error("Error adding category", error);
+      // }
+
+      setAllCategories((prevCategories) => [
+        { _id: `category-${Date.now()}`, ...categoryData },
+        ...prevCategories,
+      ]);
+      handleClear();
+      toast.success("Category added successfully");
     }
   };
 
-  const handleEditCategory = (index, id) => {
-    const selectedCategory = allCategories[index];
-
-    if (!selectedCategory) return;
+  const handleEditCategory = (category) => {
+    if (!category) return;
 
     categoryNameRef.current.focus();
-    setCategoryName(selectedCategory.name || "");
-    setEditIndex(index);
-    setUpdateId(id);
+    setCategoryName(category.name || "");
+    setUpdateId(category._id);
   };
 
   const handleDeleteCategory = async (id, name) => {
-    try {
-      const response = await deleteCategory(id);
-      if (response.status === 200) {
-        toast.success(`${name} deleted successfully`);
-        fetchCategories(searchTerm);
-      } else {
-        toast.error(response?.data?.message || `Failed to delete ${name}`);
-      }
-    } catch (error) {
-      toast.error(
-        error.message || error?.data?.message || "Error while deleting category"
-      );
-      console.error("Error deleting category!", error);
+    // try {
+    //   const response = await deleteCategory(id);
+    //   if (response.status === 200) {
+    //     toast.success(`${name} deleted successfully`);
+    //     fetchCategories(searchTerm);
+    //   } else {
+    //     toast.error(response?.data?.message || `Failed to delete ${name}`);
+    //   }
+    // } catch (error) {
+    //   toast.error(
+    //     error.message || error?.data?.message || "Error while deleting category"
+    //   );
+    //   console.error("Error deleting category!", error);
+    // }
+
+    setAllCategories((prevCategories) =>
+      prevCategories.filter((category) => category._id !== id)
+    );
+    if (updateId === id) {
+      handleClear();
     }
+    toast.success(`${name} deleted successfully`);
   };
 
   const handleClear = () => {
     setCategoryName("");
-    setEditIndex(null);
     setUpdateId("");
   };
 
-  const fetchCategories = async (search = "") => {
-    setIsLoading(true);
-    try {
-      const response = await getCategories(search, pageSize);
-      console.log("get categories response!", response);
-
-      if (response.status === 200) {
-        setAllCategories(
-          response?.data?.data?.items || response?.data?.data?.category || []
-        );
-        setTotalCategories(
-          response?.data?.data?.length || response?.data?.data?.totalCategory || 0
-        );
-      } else {
-        console.log("No categories to display! ", response);
-      }
-    } catch (error) {
-      console.error("Error fetching categories", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchCategories = async (search = "") => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await getCategories(search, pageSize);
+  //     console.log("get categories response!", response);
+  //
+  //     if (response.status === 200) {
+  //       setAllCategories(
+  //         response?.data?.data?.items || response?.data?.data?.category || []
+  //       );
+  //       setTotalCategories(
+  //         response?.data?.data?.length ||
+  //           response?.data?.data?.totalCategory ||
+  //           0
+  //       );
+  //     } else {
+  //       console.log("No categories to display! ", response);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching categories", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleSearch = async (e) => {
     setSearchTerm(e.target.value);
+    setPageSize(10);
   };
 
   const handleLoadMore = () => {
@@ -135,13 +168,19 @@ const Category = () => {
     }
   };
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchCategories(searchTerm);
-    }, 500);
+  // useEffect(() => {
+  //   const delayDebounceFn = setTimeout(() => {
+  //     fetchCategories(searchTerm);
+  //   }, 500);
+  //
+  //   return () => clearTimeout(delayDebounceFn);
+  // }, [searchTerm, pageSize]);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, pageSize]);
+  const filteredCategories = allCategories.filter((category) =>
+    category.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const displayedCategories = filteredCategories.slice(0, pageSize);
+  const totalCategories = filteredCategories.length;
 
   return (
     <div className="bg-gradient-to-r bg-gray-200 text-black min-h-screen py-10">
@@ -220,8 +259,8 @@ const Category = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {allCategories?.length > 0 ? (
-                    allCategories?.map((category, index) => (
+                  {displayedCategories?.length > 0 ? (
+                    displayedCategories?.map((category, index) => (
                       <tr
                         key={category._id}
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -236,7 +275,7 @@ const Category = () => {
                           <button
                             type="button"
                             onClick={() =>
-                              handleEditCategory(index, category._id)
+                              handleEditCategory(category)
                             }
                             className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300 mr-2"
                           >
