@@ -1,35 +1,130 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  getPatients,
-  createPatient,
-  updatePatient,
-  deletePatient,
-} from "../services/patientService";
+import React, { useState } from "react";
+// import {
+//   getPatients,
+//   createPatient,
+//   updatePatient,
+//   deletePatient,
+// } from "../services/patientService";
 import { toast } from "react-toastify";
 import GoBack from "../components/GoBack";
 import { ClipLoader } from "react-spinners";
-import { getDoctors, searchDoctor } from "../services/doctorService";
+// import { getDoctors, searchDoctor } from "../services/doctorService";
 import moment from "moment";
-import { getCategories, searchCategories } from "../services/categoryService";
-import {
-  getDepartments,
-  searchDepartments,
-} from "../services/departmentService";
+// import { getCategories, searchCategories } from "../services/categoryService";
+// import {
+//   getDepartments,
+//   searchDepartments,
+// } from "../services/departmentService";
+
+const hardcodedDoctors = [
+  { _id: "doctor-001", name: "Dr. Amit Sharma" },
+  { _id: "doctor-002", name: "Dr. Priya Mehta" },
+  { _id: "doctor-003", name: "Dr. Rohit Verma" },
+  { _id: "doctor-004", name: "Dr. Neha Patel" },
+];
+
+const hardcodedCategories = [
+  { _id: "category-001", name: "General" },
+  { _id: "category-002", name: "Emergency" },
+  { _id: "category-003", name: "Corporate" },
+  { _id: "category-004", name: "Senior Citizen" },
+];
+
+const hardcodedDepartments = [
+  { _id: "department-001", name: "Hematology" },
+  { _id: "department-002", name: "Biochemistry" },
+  { _id: "department-003", name: "Microbiology" },
+  { _id: "department-004", name: "Clinical Pathology" },
+];
+
+const hardcodedPatients = [
+  {
+    _id: "patient-001",
+    name: "Ramesh Kumar",
+    doctorId: "doctor-001",
+    doctors: { _id: "doctor-001", name: "Dr. Amit Sharma" },
+    address: "12 MG Road",
+    cityOrVillage: "Indore",
+    contactNo: "9876543210",
+    email: "ramesh.kumar@example.com",
+    sampleDate: "10/05/2026",
+    sampleTime: "09:30",
+    reportingDate: "11/05/2026",
+    reportingTime: "16:00",
+    categoryId: "category-001",
+    category: { _id: "category-001", name: "General" },
+    weight: "72",
+    depertmentId: "department-001",
+    depertment: { _id: "department-001", name: "Hematology" },
+  },
+  {
+    _id: "patient-002",
+    name: "Sunita Joshi",
+    doctorId: "doctor-002",
+    doctors: { _id: "doctor-002", name: "Dr. Priya Mehta" },
+    address: "45 Civil Lines",
+    cityOrVillage: "Bhopal",
+    contactNo: "9123456789",
+    email: "sunita.joshi@example.com",
+    sampleDate: "09/05/2026",
+    sampleTime: "11:15",
+    reportingDate: "10/05/2026",
+    reportingTime: "17:30",
+    categoryId: "category-002",
+    category: { _id: "category-002", name: "Emergency" },
+    weight: "64",
+    depertmentId: "department-002",
+    depertment: { _id: "department-002", name: "Biochemistry" },
+  },
+  {
+    _id: "patient-003",
+    name: "Arjun Singh",
+    doctorId: "doctor-003",
+    doctors: { _id: "doctor-003", name: "Dr. Rohit Verma" },
+    address: "8 Station Road",
+    cityOrVillage: "Ujjain",
+    contactNo: "9988776655",
+    email: "arjun.singh@example.com",
+    sampleDate: "08/05/2026",
+    sampleTime: "10:45",
+    reportingDate: "09/05/2026",
+    reportingTime: "15:00",
+    categoryId: "category-003",
+    category: { _id: "category-003", name: "Corporate" },
+    weight: "81",
+    depertmentId: "department-003",
+    depertment: { _id: "department-003", name: "Microbiology" },
+  },
+  {
+    _id: "patient-004",
+    name: "Meena Gupta",
+    doctorId: "doctor-004",
+    doctors: { _id: "doctor-004", name: "Dr. Neha Patel" },
+    address: "22 Lake View Colony",
+    cityOrVillage: "Dewas",
+    contactNo: "9090909090",
+    email: "meena.gupta@example.com",
+    sampleDate: "07/05/2026",
+    sampleTime: "08:20",
+    reportingDate: "08/05/2026",
+    reportingTime: "14:30",
+    categoryId: "category-004",
+    category: { _id: "category-004", name: "Senior Citizen" },
+    weight: "58",
+    depertmentId: "department-004",
+    depertment: { _id: "department-004", name: "Clinical Pathology" },
+  },
+];
 
 const Patient = () => {
-  const [allPatients, setAllPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
+  const [allPatients, setAllPatients] = useState(hardcodedPatients);
+  const [doctors] = useState(hardcodedDoctors);
+  const [categories] = useState(hardcodedCategories);
+  const [departments] = useState(hardcodedDepartments);
   const [updateId, setUpdateId] = useState("");
   const [pageSize, setPageSize] = useState(10);
-  const [totalPatients, setTotalPatients] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [doctorSearchTerm, setDoctorSearchTerm] = useState("");
-  const [categorySearchTerm, setCategorySearchTerm] = useState("");
-  const [departmentSearchTerm, setDepartmentSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const [patientDetails, setPatientDetails] = useState({
     patientName: "",
@@ -65,7 +160,6 @@ const Patient = () => {
       weight: "",
       departmentId: "",
     });
-    setEditIndex(null);
     setUpdateId("");
   };
 
@@ -75,6 +169,26 @@ const Patient = () => {
 
   const isValidPhone = (phone) => {
     return /^[0-9]{10,}$/.test(phone);
+  };
+
+  const buildPatientRecord = (payload, id = `patient-${Date.now()}`) => {
+    const selectedDoctor = doctors.find(
+      (doctor) => doctor._id === payload.doctorId
+    );
+    const selectedCategory = categories.find(
+      (category) => category._id === payload.categoryId
+    );
+    const selectedDepartment = departments.find(
+      (department) => department._id === payload.depertmentId
+    );
+
+    return {
+      _id: id,
+      ...payload,
+      doctors: selectedDoctor || null,
+      category: selectedCategory || null,
+      depertment: selectedDepartment || null,
+    };
   };
 
   const handleAddOrUpdatePatient = async () => {
@@ -131,35 +245,52 @@ const Patient = () => {
     console.log("payload: ", payload);
 
     if (updateId) {
-      try {
-        const response = await updatePatient(payload, updateId);
-        if (response.status === 200 || response.status === 201) {
-          fetchPatients(searchTerm);
-          toast.success("Patient updated successfully");
-          handleClear();
-        } else {
-          toast.error(response?.data?.message || "Failed to update patient");
-        }
-      } catch (error) {
-        toast.error(
-          error?.message || error?.data?.message || "Error updating patient"
-        );
-      }
+      // try {
+      //   const response = await updatePatient(payload, updateId);
+      //   if (response.status === 200 || response.status === 201) {
+      //     fetchPatients(searchTerm);
+      //     toast.success("Patient updated successfully");
+      //     handleClear();
+      //   } else {
+      //     toast.error(response?.data?.message || "Failed to update patient");
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error?.message || error?.data?.message || "Error updating patient"
+      //   );
+      // }
+
+      setAllPatients((prevPatients) =>
+        prevPatients.map((patient) =>
+          patient._id === updateId
+            ? buildPatientRecord(payload, updateId)
+            : patient
+        )
+      );
+      toast.success("Patient updated successfully");
+      handleClear();
     } else {
-      try {
-        const response = await createPatient(payload);
-        if (response.status === 200 || response.status === 201) {
-          fetchPatients(searchTerm);
-          handleClear();
-          toast.success("Patient added successfully");
-        } else {
-          toast.error(response?.data?.message || "Failed to add patient.");
-        }
-      } catch (error) {
-        toast.error(
-          error?.message || error?.data?.message || "Error while adding patient"
-        );
-      }
+      // try {
+      //   const response = await createPatient(payload);
+      //   if (response.status === 200 || response.status === 201) {
+      //     fetchPatients(searchTerm);
+      //     handleClear();
+      //     toast.success("Patient added successfully");
+      //   } else {
+      //     toast.error(response?.data?.message || "Failed to add patient.");
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error?.message || error?.data?.message || "Error while adding patient"
+      //   );
+      // }
+
+      setAllPatients((prevPatients) => [
+        buildPatientRecord(payload),
+        ...prevPatients,
+      ]);
+      handleClear();
+      toast.success("Patient added successfully");
     }
   };
 
@@ -173,8 +304,7 @@ const Patient = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const handleEditPatient = (index, id) => {
-    const selectedPatient = allPatients[index];
+  const handleEditPatient = (selectedPatient) => {
     console.log("selected patient", selectedPatient);
     if (!selectedPatient) return;
 
@@ -195,25 +325,32 @@ const Patient = () => {
       departmentId: selectedPatient.depertmentId || "",
     });
 
-    setEditIndex(index);
-    setUpdateId(id);
+    setUpdateId(selectedPatient._id);
   };
 
   const handleDeletePatient = async (id, name) => {
-    try {
-      const response = await deletePatient(id);
-      if (response.status === 200) {
-        toast.success(`${name} deleted successfully`);
-        fetchPatients(searchTerm);
-      } else {
-        toast.error(response?.data?.message || "Failed to delete patient!");
-        console.log("Failed to delete patient!", response);
-      }
-    } catch (error) {
-      toast.error(
-        error?.message || error?.data?.message || "Error while deleting patient"
-      );
+    // try {
+    //   const response = await deletePatient(id);
+    //   if (response.status === 200) {
+    //     toast.success(`${name} deleted successfully`);
+    //     fetchPatients(searchTerm);
+    //   } else {
+    //     toast.error(response?.data?.message || "Failed to delete patient!");
+    //     console.log("Failed to delete patient!", response);
+    //   }
+    // } catch (error) {
+    //   toast.error(
+    //     error?.message || error?.data?.message || "Error while deleting patient"
+    //   );
+    // }
+
+    setAllPatients((prevPatients) =>
+      prevPatients.filter((patient) => patient._id !== id)
+    );
+    if (updateId === id) {
+      handleClear();
     }
+    toast.success(`${name} deleted successfully`);
   };
 
   const handleLoadMore = () => {
@@ -232,88 +369,109 @@ const Patient = () => {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+    setPageSize(10);
   };
 
-  const fetchAllDoctors = async () => {
-    try {
-      const response = await searchDoctor(doctorSearchTerm);
-      console.log("get doc response", response);
+  // const fetchAllDoctors = async () => {
+  //   try {
+  //     const response = await searchDoctor(doctorSearchTerm);
+  //     console.log("get doc response", response);
+  //
+  //     if (response.status === 200) {
+  //       setDoctors(response.data.data);
+  //     } else {
+  //       console.log("Failed to fetch doctors", response);
+  //       setDoctors([]);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     setDoctors([]);
+  //   }
+  // };
+  //
+  // const fetchCategories = async () => {
+  //   try {
+  //     const response = await searchCategories(categorySearchTerm);
+  //     console.log("get cat response", response);
+  //
+  //     if (response.status === 200) {
+  //       setCategories(response.data.data);
+  //     } else {
+  //       console.log("Failed to fetch categories", response);
+  //       setCategories([]);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     setCategories([]);
+  //   }
+  // };
+  //
+  // const fetchDepartments = async () => {
+  //   try {
+  //     const response = await searchDepartments(departmentSearchTerm);
+  //     console.log("get dept response", response);
+  //
+  //     if (response.status === 200) {
+  //       setDepartments(response.data.data);
+  //     } else {
+  //       console.log("Failed to fetch categories", response);
+  //       setDepartments([]);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     setDepartments([]);
+  //   }
+  // };
+  //
+  // const fetchPatients = async (search = "") => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await getPatients(search, pageSize);
+  //     console.log("response patient: ", response);
+  //     if (response.status === 200) {
+  //       setAllPatients(response?.data?.data?.items || []);
+  //       setTotalPatients(response?.data?.data?.totalItems || 0);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching patients", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+  //
+  // useEffect(() => {
+  //   fetchAllDoctors();
+  //   fetchCategories();
+  //   fetchDepartments();
+  // }, []);
+  //
+  // useEffect(() => {
+  //   const delayDebounceFn = setTimeout(() => {
+  //     fetchPatients(searchTerm);
+  //   }, 500);
+  //
+  //   return () => clearTimeout(delayDebounceFn);
+  // }, [searchTerm, pageSize]);
 
-      if (response.status === 200) {
-        setDoctors(response.data.data);
-      } else {
-        console.log("Failed to fetch doctors", response);
-        setDoctors([]);
-      }
-    } catch (error) {
-      console.log(error);
-      setDoctors([]);
-    }
-  };
+  const filteredPatients = allPatients.filter((patient) => {
+    const searchableValues = [
+      patient.name,
+      patient.doctors?.name,
+      patient.address,
+      patient.cityOrVillage,
+      patient.contactNo,
+      patient.email,
+      patient.category?.name,
+      patient.depertment?.name,
+    ];
 
-  const fetchCategories = async () => {
-    try {
-      const response = await searchCategories(categorySearchTerm);
-      console.log("get cat response", response);
-
-      if (response.status === 200) {
-        setCategories(response.data.data);
-      } else {
-        console.log("Failed to fetch categories", response);
-        setCategories([]);
-      }
-    } catch (error) {
-      console.log(error);
-      setCategories([]);
-    }
-  };
-
-  const fetchDepartments = async () => {
-    try {
-      const response = await searchDepartments(departmentSearchTerm);
-      console.log("get dept response", response);
-
-      if (response.status === 200) {
-        setDepartments(response.data.data);
-      } else {
-        console.log("Failed to fetch categories", response);
-        setDepartments([]);
-      }
-    } catch (error) {
-      console.log(error);
-      setDepartments([]);
-    }
-  };
-
-  const fetchPatients = async (search = "") => {
-    setIsLoading(true);
-    try {
-      const response = await getPatients(search, pageSize);
-      console.log("response patient: ", response);
-      if (response.status === 200) {
-        setAllPatients(response?.data?.data?.items || []);
-        setTotalPatients(response?.data?.data?.totalItems || 0);
-      }
-    } catch (error) {
-      console.error("Error fetching patients", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAllDoctors();
-    fetchCategories();
-    fetchDepartments();
-  }, []);
-
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchPatients(searchTerm);
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, pageSize]);
+    return searchableValues
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+  });
+  const displayedPatients = filteredPatients.slice(0, pageSize);
+  const totalPatients = filteredPatients.length;
 
   return (
     <div className="bg-gradient-to-r bg-gray-200 text-black min-h-screen py-10">
@@ -622,8 +780,8 @@ const Patient = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {allPatients?.length > 0 ? (
-                    allPatients?.map((patient, index) => (
+                  {displayedPatients?.length > 0 ? (
+                    displayedPatients?.map((patient, index) => (
                       <tr
                         key={patient._id}
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -674,7 +832,7 @@ const Patient = () => {
                           <button
                             type="button"
                             onClick={() =>
-                              handleEditPatient(index, patient._id)
+                              handleEditPatient(patient)
                             }
                             className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300 mr-2"
                           >
