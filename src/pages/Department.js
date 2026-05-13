@@ -1,24 +1,37 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  getDepartments,
-  createDepartment,
-  updateDepartment,
-  deleteDepartment,
-  searchDepartments,
-} from "../services/departmentService";
+import React, { useRef, useState } from "react";
+// import {
+//   getDepartments,
+//   createDepartment,
+//   updateDepartment,
+//   deleteDepartment,
+//   searchDepartments,
+// } from "../services/departmentService";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import GoBack from "../components/GoBack";
 
+const hardcodedDepartments = [
+  { _id: "department-001", name: "Hematology" },
+  { _id: "department-002", name: "Biochemistry" },
+  { _id: "department-003", name: "Microbiology" },
+  { _id: "department-004", name: "Clinical Pathology" },
+  { _id: "department-005", name: "Serology" },
+  { _id: "department-006", name: "Histopathology" },
+  { _id: "department-007", name: "Cytology" },
+  { _id: "department-008", name: "Immunology" },
+  { _id: "department-009", name: "Molecular Diagnostics" },
+  { _id: "department-010", name: "Endocrinology" },
+  { _id: "department-011", name: "Toxicology" },
+  { _id: "department-012", name: "Blood Bank" },
+];
+
 const Department = () => {
   const [departmentName, setDepartmentName] = useState("");
-  const [allDepartments, setAllDepartments] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
+  const [allDepartments, setAllDepartments] = useState(hardcodedDepartments);
   const [updateId, setUpdateId] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [pageSize, setPageSize] = useState(10);
-  const [totalDepartments, setTotalDepartments] = useState(0);
 
   const departmentNameRef = useRef(null);
 
@@ -30,105 +43,129 @@ const Department = () => {
     const departmentData = { name: departmentName };
 
     if (updateId) {
-      try {
-        const response = await updateDepartment(departmentData, updateId);
-        if (response.status === 200 || response.status === 201) {
-          fetchDepartments(searchTerm);
-          toast.success("Department updated successfully");
-          handleClear();
-        } else {
-          toast.error(response?.data?.message || "Failed to update department");
-        }
-      } catch (error) {
-        toast.error(
-          error.message ||
-            error?.data?.message ||
-            "Error while updating department"
-        );
-      }
+      // try {
+      //   const response = await updateDepartment(departmentData, updateId);
+      //   if (response.status === 200 || response.status === 201) {
+      //     fetchDepartments(searchTerm);
+      //     toast.success("Department updated successfully");
+      //     handleClear();
+      //   } else {
+      //     toast.error(response?.data?.message || "Failed to update department");
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error.message ||
+      //       error?.data?.message ||
+      //       "Error while updating department"
+      //   );
+      // }
+
+      setAllDepartments((prevDepartments) =>
+        prevDepartments.map((department) =>
+          department._id === updateId
+            ? { ...department, ...departmentData }
+            : department
+        )
+      );
+      toast.success("Department updated successfully");
+      handleClear();
     } else {
-      try {
-        const response = await createDepartment(departmentData);
-        if (response.status === 200 || response.status === 201) {
-          fetchDepartments(searchTerm);
-          toast.success("Department added successfully");
-          handleClear();
-        } else {
-          toast.error(response?.data?.message || "Failed to add department");
-        }
-      } catch (error) {
-        toast.error(
-          error.message ||
-            error?.data?.message ||
-            "Error while adding department"
-        );
-      }
+      // try {
+      //   const response = await createDepartment(departmentData);
+      //   if (response.status === 200 || response.status === 201) {
+      //     fetchDepartments(searchTerm);
+      //     toast.success("Department added successfully");
+      //     handleClear();
+      //   } else {
+      //     toast.error(response?.data?.message || "Failed to add department");
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error.message ||
+      //       error?.data?.message ||
+      //       "Error while adding department"
+      //   );
+      // }
+
+      setAllDepartments((prevDepartments) => [
+        { _id: `department-${Date.now()}`, ...departmentData },
+        ...prevDepartments,
+      ]);
+      toast.success("Department added successfully");
+      handleClear();
     }
   };
 
-  const handleEditDepartment = (index, id) => {
+  const handleEditDepartment = (department) => {
     departmentNameRef.current.focus();
-    const selectedDepartment = allDepartments[index];
-    setDepartmentName(selectedDepartment.name);
-    setEditIndex(index);
-    setUpdateId(id);
+    if (!department) return;
+    setDepartmentName(department.name || "");
+    setUpdateId(department._id);
   };
 
   const handleDeleteDepartment = async (id, name) => {
-    try {
-      const response = await deleteDepartment(id);
-      if (response.status === 200) {
-        toast.success(`${name} Department deleted successfully`);
-        fetchDepartments(searchTerm);
-      } else {
-        console.log("Failed to delete department", response);
-        toast.error(
-          response?.data?.message || `Failed to delete ${name} department!`
-        );
-      }
-    } catch (error) {
-      console.log("Error while deleting department", error);
-      toast.error(
-        error.message ||
-          error?.data?.message ||
-          `Error while deleting ${name} department!`
-      );
+    // try {
+    //   const response = await deleteDepartment(id);
+    //   if (response.status === 200) {
+    //     toast.success(`${name} Department deleted successfully`);
+    //     fetchDepartments(searchTerm);
+    //   } else {
+    //     console.log("Failed to delete department", response);
+    //     toast.error(
+    //       response?.data?.message || `Failed to delete ${name} department!`
+    //     );
+    //   }
+    // } catch (error) {
+    //   console.log("Error while deleting department", error);
+    //   toast.error(
+    //     error.message ||
+    //       error?.data?.message ||
+    //       `Error while deleting ${name} department!`
+    //   );
+    // }
+
+    setAllDepartments((prevDepartments) =>
+      prevDepartments.filter((department) => department._id !== id)
+    );
+    if (updateId === id) {
+      handleClear();
     }
+    toast.success(`${name} Department deleted successfully`);
   };
 
   const handleClear = () => {
     setDepartmentName("");
-    setEditIndex(null);
     setUpdateId("");
   };
 
-  const fetchDepartments = async (search = "") => {
-    setIsLoading(true);
-    try {
-      const response = await getDepartments(search, pageSize);
-      if (response.status === 200) {
-        setAllDepartments(
-          response?.data?.data?.items || response?.data?.data?.departments || []
-        );
-        setTotalDepartments(
-          response?.data?.data?.totalItems ||
-            response?.data?.data?.totalDepertment ||
-            0
-        );
-      } else {
-        setAllDepartments([]);
-        setTotalDepartments(0);
-        console.log("No departments to display! ", response);
-      }
-    } catch (error) {
-      console.error("Error fetching departments", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchDepartments = async (search = "") => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await getDepartments(search, pageSize);
+  //     if (response.status === 200) {
+  //       setAllDepartments(
+  //         response?.data?.data?.items || response?.data?.data?.departments || []
+  //       );
+  //       setTotalDepartments(
+  //         response?.data?.data?.totalItems ||
+  //           response?.data?.data?.totalDepertment ||
+  //           0
+  //       );
+  //     } else {
+  //       setAllDepartments([]);
+  //       setTotalDepartments(0);
+  //       console.log("No departments to display! ", response);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching departments", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleSearch = async (e) => {
     setSearchTerm(e.target.value);
+    setPageSize(10);
   };
 
   const handleLoadMore = () => {
@@ -137,13 +174,19 @@ const Department = () => {
     }
   };
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchDepartments(searchTerm);
-    }, 500);
+  // useEffect(() => {
+  //   const delayDebounceFn = setTimeout(() => {
+  //     fetchDepartments(searchTerm);
+  //   }, 500);
+  //
+  //   return () => clearTimeout(delayDebounceFn);
+  // }, [searchTerm, pageSize]);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, pageSize]);
+  const filteredDepartments = allDepartments.filter((department) =>
+    department.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const displayedDepartments = filteredDepartments.slice(0, pageSize);
+  const totalDepartments = filteredDepartments.length;
 
 
   return (
@@ -185,7 +228,7 @@ const Department = () => {
               onClick={handleAddOrUpdateDepartment}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
             >
-              {editIndex !== null ? "Update" : "Add"}
+              {updateId ? "Update" : "Add"}
             </button>
           </div>
         </div>
@@ -223,8 +266,8 @@ const Department = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {allDepartments?.length > 0 ? (
-                    allDepartments?.map((department, index) => (
+                  {displayedDepartments?.length > 0 ? (
+                    displayedDepartments?.map((department, index) => (
                       <tr
                         key={department._id}
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -239,7 +282,7 @@ const Department = () => {
                           <button
                             type="button"
                             onClick={() =>
-                              handleEditDepartment(index, department._id)
+                              handleEditDepartment(department)
                             }
                             className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300 mr-2"
                           >
