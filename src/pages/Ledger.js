@@ -1,13 +1,61 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  getLedgers,
-  createLedger,
-  updateLedger,
-  deleteLedger,
-} from "../services/ledgerService";
+import React, { useRef, useState } from "react";
+// import {
+//   getLedgers,
+//   createLedger,
+//   updateLedger,
+//   deleteLedger,
+// } from "../services/ledgerService";
 import { toast } from "react-toastify";
 import GoBack from "../components/GoBack";
 import { ClipLoader } from "react-spinners";
+
+const hardcodedLedgers = [
+  {
+    _id: "ledger-001",
+    name: "Cash Account",
+    type: "Asset",
+    particulars: "Opening balance",
+    debit: 5000,
+    credit: 0,
+    balance: 5000,
+  },
+  {
+    _id: "ledger-002",
+    name: "Lab Supplies",
+    type: "Expense",
+    particulars: "Reagent purchase",
+    debit: 1200,
+    credit: 0,
+    balance: 3800,
+  },
+  {
+    _id: "ledger-003",
+    name: "Patient Receivables",
+    type: "Asset",
+    particulars: "Pending invoices",
+    debit: 2500,
+    credit: 0,
+    balance: 6300,
+  },
+  {
+    _id: "ledger-004",
+    name: "Diagnostic Revenue",
+    type: "Income",
+    particulars: "Blood test billing",
+    debit: 0,
+    credit: 4200,
+    balance: 10500,
+  },
+  {
+    _id: "ledger-005",
+    name: "Bank Account",
+    type: "Asset",
+    particulars: "Current account",
+    debit: 8000,
+    credit: 500,
+    balance: 15500,
+  },
+];
 
 const Ledger = () => {
   const [ledgerData, setLedgerData] = useState({
@@ -18,10 +66,9 @@ const Ledger = () => {
     credit: "",
     balance: "",
   });
-  const [ledgers, setLedgers] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
+  const [ledgers, setLedgers] = useState(hardcodedLedgers);
   const [updateId, setUpdateId] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
 
   const ledgerNameRef = useRef(null);
@@ -30,92 +77,82 @@ const Ledger = () => {
     setLedgerData({ ...ledgerData, [e.target.name]: e.target.value });
   };
 
-  const validateForm = () => {
-    for (const key in ledgerData) {
-      if (!ledgerData[key]) {
-        toast.warning(
-          `${key.charAt(0).toUpperCase() + key.slice(1)} is required`
-        );
-
-        const fieldRef = document.querySelector(`[name="${key}"]`);
-        if (fieldRef) fieldRef.focus();
-
-        return false;
-      }
-    }
-    return true;
-  };
-
   const handleAddOrUpdateLedger = async () => {
     if (!ledgerData.name) {
       toast.warning(`Name is required`);
       return;
     }
 
-    if (editIndex !== null) {
-      try {
-        const response = await updateLedger(
-          {
-            name: ledgerData?.name,
-            type: ledgerData.type || "",
-            particulars: ledgerData.particulars || "",
-            debit: parseFloat(ledgerData.debit) || 0,
-            credit: parseFloat(ledgerData.credit) || 0,
-            balance: parseFloat(ledgerData.balance) || 0,
-          },
-          updateId
-        );
-        // console.log("update res ---> ", response);
-        if (response.status === 200 || response.status === 201) {
-          const updatedLedgers = [...ledgers];
-          updatedLedgers[editIndex] = response?.data?.data;
-          setLedgers(updatedLedgers);
-          toast.success(
-            `Ledger '${ledgerData.name || "No Name"}' updated successfully`
-          );
-          handleClear();
-        } else {
-          toast.error(
-            response?.data?.message || `Failed to update ${ledgerData.name}`
-          );
-        }
-      } catch (error) {
-        toast.error(
-          error?.message ||
-            error?.data?.message ||
-            "Error while updating ledger"
-        );
-      }
+    const payload = {
+      name: ledgerData?.name,
+      type: ledgerData.type || "",
+      particulars: ledgerData.particulars || "",
+      debit: parseFloat(ledgerData.debit) || 0,
+      credit: parseFloat(ledgerData.credit) || 0,
+      balance: parseFloat(ledgerData.balance) || 0,
+    };
+
+    if (updateId) {
+      // try {
+      //   const response = await updateLedger(payload, updateId);
+      //   if (response.status === 200 || response.status === 201) {
+      //     const updatedLedgers = [...ledgers];
+      //     updatedLedgers[editIndex] = response?.data?.data;
+      //     setLedgers(updatedLedgers);
+      //     toast.success(
+      //       `Ledger '${ledgerData.name || "No Name"}' updated successfully`
+      //     );
+      //     handleClear();
+      //   } else {
+      //     toast.error(
+      //       response?.data?.message || `Failed to update ${ledgerData.name}`
+      //     );
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error?.message ||
+      //       error?.data?.message ||
+      //       "Error while updating ledger"
+      //   );
+      // }
+
+      setLedgers((prevLedgers) =>
+        prevLedgers.map((ledger) =>
+          ledger._id === updateId ? { ...ledger, ...payload } : ledger
+        )
+      );
+      toast.success(
+        `Ledger '${ledgerData.name || "No Name"}' updated successfully`
+      );
+      handleClear();
     } else {
-      try {
-        const response = await createLedger({
-          name: ledgerData.name,
-          type: ledgerData.type || "",
-          particulars: ledgerData.particulars || "",
-          debit: parseFloat(ledgerData.debit) || 0,
-          credit: parseFloat(ledgerData.credit) || 0,
-          balance: parseFloat(ledgerData.balance) || 0,
-        });
-        console.log("res ---> ", response);
-        if (response.status === 200 || response.status === 201) {
-          setLedgers([response?.data?.data, ...ledgers]);
-          toast.success("Ledger added successfully");
-          handleClear();
-        } else {
-          toast.error(response?.data?.message || "Failed to add ledger");
-        }
-      } catch (error) {
-        toast.error(
-          error?.message || error?.data?.message || "Error while adding ledger"
-        );
-      }
+      // try {
+      //   const response = await createLedger(payload);
+      //   if (response.status === 200 || response.status === 201) {
+      //     setLedgers([response?.data?.data, ...ledgers]);
+      //     toast.success("Ledger added successfully");
+      //     handleClear();
+      //   } else {
+      //     toast.error(response?.data?.message || "Failed to add ledger");
+      //   }
+      // } catch (error) {
+      //   toast.error(
+      //     error?.message || error?.data?.message || "Error while adding ledger"
+      //   );
+      // }
+
+      setLedgers((prevLedgers) => [
+        { _id: `ledger-${Date.now()}`, ...payload },
+        ...prevLedgers,
+      ]);
+      toast.success("Ledger added successfully");
+      handleClear();
     }
   };
 
-  const handleEditLedger = (index, id) => {
-    const selectedLedger = ledgers[index];
+  const handleEditLedger = (ledger) => {
+    const selectedLedger = ledger;
     if (!selectedLedger) return;
-    // console.log("sledger", selectedLedger);
 
     setLedgerData({
       name: selectedLedger?.name || "",
@@ -125,31 +162,38 @@ const Ledger = () => {
       credit: selectedLedger?.credit || "",
       balance: selectedLedger?.balance || "",
     });
-    setEditIndex(index);
-    setUpdateId(id);
+    setUpdateId(selectedLedger._id);
     ledgerNameRef.current.focus();
   };
 
   const handleDeleteLedger = async (id, name) => {
-    try {
-      const response = await deleteLedger(id);
-      if (response.status === 200) {
-        setLedgers(
-          ledgers.length > 0
-            ? ledgers.filter((ledger) => ledger._id !== id)
-            : []
-        );
-        toast.success(`Ledger '${name || "No Name"}' deleted successfully`);
-      } else {
-        toast.error(
-          response?.message || response?.data?.message || "Failed to delete ledger"
-        );
-      }
-    } catch (error) {
-      toast.error(
-        error?.message || error?.data?.message || "Error while deleting ledger"
-      );
+    // try {
+    //   const response = await deleteLedger(id);
+    //   if (response.status === 200) {
+    //     setLedgers(
+    //       ledgers.length > 0
+    //         ? ledgers.filter((ledger) => ledger._id !== id)
+    //         : []
+    //     );
+    //     toast.success(`Ledger '${name || "No Name"}' deleted successfully`);
+    //   } else {
+    //     toast.error(
+    //       response?.message || response?.data?.message || "Failed to delete ledger"
+    //     );
+    //   }
+    // } catch (error) {
+    //   toast.error(
+    //     error?.message || error?.data?.message || "Error while deleting ledger"
+    //   );
+    // }
+
+    setLedgers((prevLedgers) =>
+      prevLedgers.filter((ledger) => ledger._id !== id)
+    );
+    if (updateId === id) {
+      handleClear();
     }
+    toast.success(`Ledger '${name || "No Name"}' deleted successfully`);
   };
 
   const handleClear = () => {
@@ -161,29 +205,29 @@ const Ledger = () => {
       credit: "",
       balance: "",
     });
-    setEditIndex(null);
+    setUpdateId("");
   };
 
-  const fetchLedgers = async () => {
-    setIsLoading(true);
-    try {
-      const response = await getLedgers();
-      if (response.status === 200) {
-        setLedgers(response?.data?.data);
-        // setTotalPages(Math.ceil(response?.data?.data.length / ledgersPerPage));
-      } else {
-        console.log("No ledgers to display! ", response);
-      }
-    } catch (error) {
-      toast.error("Error fetching ledgers");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchLedgers = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await getLedgers();
+  //     if (response.status === 200) {
+  //       setLedgers(response?.data?.data);
+  //       // setTotalPages(Math.ceil(response?.data?.data.length / ledgersPerPage));
+  //     } else {
+  //       console.log("No ledgers to display! ", response);
+  //     }
+  //   } catch (error) {
+  //     toast.error("Error fetching ledgers");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchLedgers();
-  }, []);
+  // useEffect(() => {
+  //   fetchLedgers();
+  // }, []);
 
   const paginatedLedgers = ledgers?.slice(0, visibleCount);
 
@@ -276,7 +320,7 @@ const Ledger = () => {
               onClick={handleAddOrUpdateLedger}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
             >
-              {editIndex !== null ? "Update" : "Add"}
+              {updateId ? "Update" : "Add"}
             </button>
           </div>
         </div>
@@ -320,7 +364,7 @@ const Ledger = () => {
                         <td className="border px-4 py-2 text-center">
                           <button
                             type="button"
-                            onClick={() => handleEditLedger(index, ledger._id)}
+                            onClick={() => handleEditLedger(ledger)}
                             className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300 mr-2"
                           >
                             Edit

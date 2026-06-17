@@ -1,27 +1,188 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import GoBack from "../components/GoBack";
 import moment from "moment";
-import {
-  getAllPatientEntryReport,
-  getPatientTestDetails,
-} from "../services/patientService";
+// import {
+//   getAllPatientEntryReport,
+//   getPatientTestDetails,
+// } from "../services/patientService";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import PatientEntryReportPrint from "../components/PatientEntryReportPrint";
 import { useReactToPrint } from "react-to-print";
 import TestDetailsModal from "../components/TestDetailsModal";
-import { axiosInstance } from "../utilities/axiosInstance";
+// import { axiosInstance } from "../utilities/axiosInstance";
 import * as XLSX from "xlsx";
+
+const hardcodedReportData = [
+  {
+    _id: "report-001",
+    paitentNo: "P-1001",
+    date: "12/05/2026",
+    labNo: "L-501",
+    title: "Mr.",
+    paitent: { name: "Ramesh Kumar" },
+    age: "42",
+    gender: "Male",
+    totalCost: 1800,
+    extraCharges: 100,
+    discount: 50,
+    advance: 1000,
+    netBlance: 850,
+    ledger: { name: "Cash Account" },
+    paymentStatus: "Partial",
+    due: 850,
+  },
+  {
+    _id: "report-002",
+    paitentNo: "P-1002",
+    date: "11/05/2026",
+    labNo: "L-502",
+    title: "Mrs.",
+    paitent: { name: "Sunita Joshi" },
+    age: "35",
+    gender: "Female",
+    totalCost: 2200,
+    extraCharges: 150,
+    discount: 100,
+    advance: 2250,
+    netBlance: 0,
+    ledger: { name: "Bank Account" },
+    paymentStatus: "Paid",
+    due: 0,
+  },
+  {
+    _id: "report-003",
+    paitentNo: "P-1003",
+    date: "10/05/2026",
+    labNo: "L-503",
+    title: "Mr.",
+    paitent: { name: "Arjun Singh" },
+    age: "29",
+    gender: "Male",
+    totalCost: 1450,
+    extraCharges: 0,
+    discount: 0,
+    advance: 500,
+    netBlance: 950,
+    ledger: { name: "Patient Receivables" },
+    paymentStatus: "Pending",
+    due: 950,
+  },
+  {
+    _id: "report-004",
+    paitentNo: "P-1004",
+    date: "09/05/2026",
+    labNo: "L-504",
+    title: "Ms.",
+    paitent: { name: "Meena Gupta" },
+    age: "51",
+    gender: "Female",
+    totalCost: 2600,
+    extraCharges: 200,
+    discount: 100,
+    advance: 1500,
+    netBlance: 1200,
+    ledger: { name: "Diagnostic Revenue" },
+    paymentStatus: "Partial",
+    due: 1200,
+  },
+];
+
+const hardcodedTestDetails = {
+  "report-001": [
+    {
+      serialNo: 1,
+      name: "Hemoglobin",
+      testGroupId: { name: "Hematology" },
+      normalRange: "13-17",
+      unit: "g/dL",
+      cost: 300,
+    },
+    {
+      serialNo: 2,
+      name: "WBC Count",
+      testGroupId: { name: "Hematology" },
+      normalRange: "4000-11000",
+      unit: "/uL",
+      cost: 450,
+    },
+  ],
+  "report-002": [
+    {
+      serialNo: 1,
+      name: "Blood Sugar",
+      testGroupId: { name: "Biochemistry" },
+      normalRange: "70-110",
+      unit: "mg/dL",
+      cost: 350,
+    },
+    {
+      serialNo: 2,
+      name: "Lipid Profile",
+      testGroupId: { name: "Biochemistry" },
+      normalRange: "See report",
+      unit: "mg/dL",
+      cost: 900,
+    },
+  ],
+  "report-003": [
+    {
+      serialNo: 1,
+      name: "Urine Routine",
+      testGroupId: { name: "Clinical Pathology" },
+      normalRange: "Normal",
+      unit: "-",
+      cost: 250,
+    },
+    {
+      serialNo: 2,
+      name: "Culture Test",
+      testGroupId: { name: "Microbiology" },
+      normalRange: "No growth",
+      unit: "-",
+      cost: 700,
+    },
+  ],
+  "report-004": [
+    {
+      serialNo: 1,
+      name: "Thyroid Profile",
+      testGroupId: { name: "Endocrinology" },
+      normalRange: "See report",
+      unit: "uIU/mL",
+      cost: 1200,
+    },
+    {
+      serialNo: 2,
+      name: "Vitamin D",
+      testGroupId: { name: "Immunology" },
+      normalRange: "30-100",
+      unit: "ng/mL",
+      cost: 800,
+    },
+  ],
+};
+
+const buildTotals = (items) => ({
+  totalCost: items.reduce((sum, entry) => sum + (entry.totalCost || 0), 0),
+  extraCharges: items.reduce((sum, entry) => sum + (entry.extraCharges || 0), 0),
+  discount: items.reduce((sum, entry) => sum + (entry.discount || 0), 0),
+  advance: items.reduce((sum, entry) => sum + (entry.advance || 0), 0),
+  netBlance: items.reduce((sum, entry) => sum + (entry.netBlance || 0), 0),
+  due: items.reduce((sum, entry) => sum + (entry.due || 0), 0),
+});
 
 const PatientEntryReport = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [reportData, setReportData] = useState([]);
+  const [reportData, setReportData] = useState(hardcodedReportData);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [pageSize, setPageSize] = useState(30);
-  const [totalReportData, setTotalReportData] = useState(0);
-  const [totalOfData, setTotalOfData] = useState(0);
+  const [totalReportData, setTotalReportData] = useState(hardcodedReportData.length);
+  const [totalOfData, setTotalOfData] = useState(
+    buildTotals(hardcodedReportData)
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [testDetails, setTestDetails] = useState([]);
@@ -31,22 +192,70 @@ const PatientEntryReport = () => {
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
   });
-  console.log(totalReportData);
+
+  const getFilteredReportData = () => {
+    const formattedFromDate = fromDate
+      ? moment(fromDate).format("DD/MM/YYYY")
+      : "";
+    const formattedToDate = toDate ? moment(toDate).format("DD/MM/YYYY") : "";
+
+    return hardcodedReportData.filter((entry) => {
+      const matchesSearch = searchTerm
+        ? entry.paitentNo.toLowerCase().includes(searchTerm.toLowerCase())
+        : true;
+
+      const entryDate = moment(entry.date, "DD/MM/YYYY");
+      const matchesFromDate = formattedFromDate
+        ? entryDate.isSameOrAfter(moment(formattedFromDate, "DD/MM/YYYY"), "day")
+        : true;
+      const matchesToDate = formattedToDate
+        ? entryDate.isSameOrBefore(moment(formattedToDate, "DD/MM/YYYY"), "day")
+        : true;
+
+      return matchesSearch && matchesFromDate && matchesToDate;
+    });
+  };
 
   const handleExport = async () => {
-    try {
-      const response = await axiosInstance.get(`/paitent-entry/get-all`, {
-        params: {
-          fromDate,
-          toDate,
-          paitentSearch: searchTerm,
-          excelReports: true,
-        },
-      });
-      console.log("Exporting...", response?.data?.data?.items);
+    // try {
+    //   const response = await axiosInstance.get(`/paitent-entry/get-all`, {
+    //     params: {
+    //       fromDate,
+    //       toDate,
+    //       paitentSearch: searchTerm,
+    //       excelReports: true,
+    //     },
+    //   });
+    //
+    //   if (response?.data?.data?.items?.length > 0) {
+    //     const formattedData = response.data.data.items.map((entry) => ({
+    //       "Patient No": entry.paitentNo,
+    //       Date: entry.date,
+    //       "Lab No": entry.labNo,
+    //       Title: entry.title,
+    //       "Patient Name": entry.paitent?.name || "N/A",
+    //       Age: entry.age,
+    //       Gender: entry.gender,
+    //       "Total Cost": entry.totalCost,
+    //       "Extra Charges": entry.extraCharges,
+    //       Discount: entry.discount,
+    //       Advance: entry.advance,
+    //       "Net Balance": entry.netBlance,
+    //       Ledger: entry.ledger?.name || "N/A",
+    //       "Payment Status": entry.paymentStatus,
+    //       "Due Amount": entry.due,
+    //     }));
+    //   }
+    // } catch (error) {
+    //   console.error("Error while exporting report", error);
+    //   toast.error(error?.response?.data?.message || "Error exporting report!");
+    // }
 
-      if (response?.data?.data?.items?.length > 0) {
-        const formattedData = response.data.data.items.map((entry) => ({
+    const exportData = reportData;
+    const exportTotals = buildTotals(exportData);
+
+    if (exportData.length > 0) {
+      const formattedData = exportData.map((entry) => ({
           "Patient No": entry.paitentNo,
           Date: entry.date,
           "Lab No": entry.labNo,
@@ -62,39 +271,34 @@ const PatientEntryReport = () => {
           Ledger: entry.ledger?.name || "N/A",
           "Payment Status": entry.paymentStatus,
           "Due Amount": entry.due,
-        }));
+      }));
 
-        formattedData.push({
-          "Patient No": "Total",
-          Date: "",
-          "Lab No": "",
-          Title: "",
-          "Patient Name": "",
-          Age: "",
-          Gender: "",
-          "Total Cost": response?.data?.data?.totalOf?.totalCost || 0,
-          "Extra Charges": response?.data?.data?.totalOf?.extraCharges || 0,
-          Discount: response?.data?.data?.totalOf?.discount || 0,
-          Advance: response?.data?.data?.totalOf?.advance || 0,
-          "Net Balance": response?.data?.data?.totalOf?.netBlance || 0,
-          Ledger: "",
-          "Payment Status": "",
-          "Due Amount": response?.data?.data?.totalOf?.due || 0,
-        });
+      formattedData.push({
+        "Patient No": "Total",
+        Date: "",
+        "Lab No": "",
+        Title: "",
+        "Patient Name": "",
+        Age: "",
+        Gender: "",
+        "Total Cost": exportTotals.totalCost || 0,
+        "Extra Charges": exportTotals.extraCharges || 0,
+        Discount: exportTotals.discount || 0,
+        Advance: exportTotals.advance || 0,
+        "Net Balance": exportTotals.netBlance || 0,
+        Ledger: "",
+        "Payment Status": "",
+        "Due Amount": exportTotals.due || 0,
+      });
 
-        const worksheet = XLSX.utils.json_to_sheet(formattedData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Patient Entries");
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Patient Entries");
 
-        XLSX.writeFile(workbook, "Patient_Entry_Report.xlsx");
-
-        toast.success("Excel exported successfully!");
-      } else {
-        toast.error("No data available for export!");
-      }
-    } catch (error) {
-      console.error("Error while exporting report", error);
-      toast.error(error?.response?.data?.message || "Error exporting report!");
+      XLSX.writeFile(workbook, "Patient_Entry_Report.xlsx");
+      toast.success("Excel exported successfully!");
+    } else {
+      toast.error("No data available for export!");
     }
   };
 
@@ -102,48 +306,54 @@ const PatientEntryReport = () => {
     setFromDate("");
     setToDate("");
     setSearchTerm("");
-    setReportData([]);
+    setReportData(hardcodedReportData);
+    setTotalReportData(hardcodedReportData.length);
+    setTotalOfData(buildTotals(hardcodedReportData));
+    setPageSize(30);
   };
 
-  const fetchReportData = async () => {
-    const formattedFromDate = fromDate
-      ? moment(fromDate).format("DD/MM/YYYY")
-      : "";
-    const formattedToDate = toDate ? moment(toDate).format("DD/MM/YYYY") : "";
-
-    const payload = {
-      searchTerm,
-      fromDate: formattedFromDate,
-      toDate: formattedToDate,
-      pageSize,
-    };
-
-    try {
-      setIsLoading(true);
-      const response = await getAllPatientEntryReport(payload);
-
-      if (response?.data?.data?.items) {
-        setReportData(response.data.data.items || []);
-        setTotalReportData(response?.data?.data?.totalItems || 0);
-        setTotalOfData(response?.data?.data?.totalOf || 0);
-      } else {
-        setReportData([]);
-        setTotalReportData(0);
-        setTotalOfData(0);
-        toast.error(response.data.message || "No data found!");
-      }
-    } catch (err) {
-      toast.error("Problem fetching patient entry report!");
-      console.error("Error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchReportData = async () => {
+  //   const formattedFromDate = fromDate
+  //     ? moment(fromDate).format("DD/MM/YYYY")
+  //     : "";
+  //   const formattedToDate = toDate ? moment(toDate).format("DD/MM/YYYY") : "";
+  //
+  //   const payload = {
+  //     searchTerm,
+  //     fromDate: formattedFromDate,
+  //     toDate: formattedToDate,
+  //     pageSize,
+  //   };
+  //
+  //   try {
+  //     setIsLoading(true);
+  //     const response = await getAllPatientEntryReport(payload);
+  //
+  //     if (response?.data?.data?.items) {
+  //       setReportData(response.data.data.items || []);
+  //       setTotalReportData(response?.data?.data?.totalItems || 0);
+  //       setTotalOfData(response?.data?.data?.totalOf || 0);
+  //     } else {
+  //       setReportData([]);
+  //       setTotalReportData(0);
+  //       setTotalOfData(0);
+  //       toast.error(response.data.message || "No data found!");
+  //     }
+  //   } catch (err) {
+  //     toast.error("Problem fetching patient entry report!");
+  //     console.error("Error:", err);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleSearch = async (e) => {
     e.preventDefault();
-
-    fetchReportData();
+    const filteredData = getFilteredReportData();
+    setReportData(filteredData);
+    setTotalReportData(filteredData.length);
+    setTotalOfData(buildTotals(filteredData));
+    setPageSize(30);
   };
 
   const handleLoadMore = () => {
@@ -153,26 +363,31 @@ const PatientEntryReport = () => {
   };
 
   const handleViewDetails = async (patientId) => {
-    try {
-      const response = await getPatientTestDetails(patientId);
-      console.log("response: ", response);
-      if (response.status === 200) {
-        setTestDetails(response.data.data.testId);
-        setModalOpen(true);
-      } else {
-        toast.error("Failed to fetch test details");
-      }
-    } catch (error) {
-      toast.error("Error fetching test details");
-      console.error("Error:", error);
-    }
+    // try {
+    //   const response = await getPatientTestDetails(patientId);
+    //   if (response.status === 200) {
+    //     setTestDetails(response.data.data.testId);
+    //     setModalOpen(true);
+    //   } else {
+    //     toast.error("Failed to fetch test details");
+    //   }
+    // } catch (error) {
+    //   toast.error("Error fetching test details");
+    //   console.error("Error:", error);
+    // }
+
+    const details = hardcodedTestDetails[patientId] || [];
+    setTestDetails(details);
+    setModalOpen(true);
   };
 
-  useEffect(() => {
-    if (!fromDate && !toDate && !searchTerm) {
-      fetchReportData();
-    }
-  }, [fromDate, toDate, searchTerm]);
+  // useEffect(() => {
+  //   if (!fromDate && !toDate && !searchTerm) {
+  //     fetchReportData();
+  //   }
+  // }, [fromDate, toDate, searchTerm]);
+
+  const paginatedReportData = reportData.slice(0, pageSize);
 
   return (
     <div className="bg-gradient-to-r bg-gray-200 text-black min-h-screen py-10">
@@ -297,8 +512,8 @@ const PatientEntryReport = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reportData?.length > 0 ? (
-                    reportData?.map((entry, index) => (
+                  {paginatedReportData?.length > 0 ? (
+                    paginatedReportData?.map((entry, index) => (
                       <tr
                         key={entry._id}
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}

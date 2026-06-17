@@ -1,58 +1,171 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import GoBack from "../components/GoBack";
-import { getAllTests } from "../services/testService";
+// import { getAllTests } from "../services/testService";
 import { ClipLoader } from "react-spinners";
 
+const hardcodedTestReports = [
+  {
+    _id: "report-test-001",
+    serialNo: "1",
+    name: "Hemoglobin",
+    testGroupId: { _id: "group-001", name: "Hematology" },
+    unit: "g/dL",
+    cost: 150,
+  },
+  {
+    _id: "report-test-002",
+    serialNo: "2",
+    name: "Total Leukocyte Count",
+    testGroupId: { _id: "group-001", name: "Hematology" },
+    unit: "cells/cumm",
+    cost: 180,
+  },
+  {
+    _id: "report-test-003",
+    serialNo: "3",
+    name: "Blood Sugar Fasting",
+    testGroupId: { _id: "group-002", name: "Biochemistry" },
+    unit: "mg/dL",
+    cost: 120,
+  },
+  {
+    _id: "report-test-004",
+    serialNo: "4",
+    name: "Liver Function Test",
+    testGroupId: { _id: "group-002", name: "Biochemistry" },
+    unit: "U/L",
+    cost: 700,
+  },
+  {
+    _id: "report-test-005",
+    serialNo: "5",
+    name: "Widal Test",
+    testGroupId: { _id: "group-003", name: "Serology" },
+    unit: "Titre",
+    cost: 350,
+  },
+  {
+    _id: "report-test-006",
+    serialNo: "6",
+    name: "Urine Culture",
+    testGroupId: { _id: "group-004", name: "Microbiology" },
+    unit: "Culture",
+    cost: 600,
+  },
+  {
+    _id: "report-test-007",
+    serialNo: "7",
+    name: "Creatinine",
+    testGroupId: { _id: "group-002", name: "Biochemistry" },
+    unit: "mg/dL",
+    cost: 220,
+  },
+  {
+    _id: "report-test-008",
+    serialNo: "8",
+    name: "Platelet Count",
+    testGroupId: { _id: "group-001", name: "Hematology" },
+    unit: "cells/cumm",
+    cost: 200,
+  },
+  {
+    _id: "report-test-009",
+    serialNo: "9",
+    name: "C-Reactive Protein",
+    testGroupId: { _id: "group-003", name: "Serology" },
+    unit: "mg/L",
+    cost: 500,
+  },
+  {
+    _id: "report-test-010",
+    serialNo: "10",
+    name: "Blood Urea",
+    testGroupId: { _id: "group-002", name: "Biochemistry" },
+    unit: "mg/dL",
+    cost: 180,
+  },
+  {
+    _id: "report-test-011",
+    serialNo: "11",
+    name: "Malaria Parasite",
+    testGroupId: { _id: "group-004", name: "Microbiology" },
+    unit: "Smear",
+    cost: 250,
+  },
+  {
+    _id: "report-test-012",
+    serialNo: "12",
+    name: "ESR",
+    testGroupId: { _id: "group-001", name: "Hematology" },
+    unit: "mm/hr",
+    cost: 120,
+  },
+];
+
 const TestReport = () => {
-  const [testData, setTestData] = useState([]);
+  const [testData] = useState(hardcodedTestReports);
   const [visibleRows, setVisibleRows] = useState(5);
   const [testName, setTestName] = useState("");
   const [testGroup, setTestGroup] = useState("");
   const [cost, setCost] = useState("");
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
-  useEffect(() => {
-    fetchTestReports();
-  }, [page, testName, testGroup, cost]);
+  // useEffect(() => {
+  //   fetchTestReports();
+  // }, [page, testName, testGroup, cost]);
 
-  const fetchTestReports = async () => {
-    setIsLoading(true);
-    try {
-      const response = await getAllTests({
-        page,
-        pageSize: 10,
-        name: testName,
-        group: testGroup,
-        cost: cost,
-      });
-      // console.log("response testData: ", response);
-      if (response.status === 200) {
-        if (page === 1) {
-          setTestData(response?.data?.data?.items);
-        } else {
-          setTestData((prev) => [...prev, ...response?.data?.data?.items]);
-        }
-      } else {
-        setTestData([]);
-      }
-    } catch (error) {
-      console.error("Error fetching test reports:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  // const fetchTestReports = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await getAllTests({
+  //       page,
+  //       pageSize: 10,
+  //       name: testName,
+  //       group: testGroup,
+  //       cost: cost,
+  //     });
+  //     // console.log("response testData: ", response);
+  //     if (response.status === 200) {
+  //       if (page === 1) {
+  //         setTestData(response?.data?.data?.items);
+  //       } else {
+  //         setTestData((prev) => [...prev, ...response?.data?.data?.items]);
+  //       }
+  //     } else {
+  //       setTestData([]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching test reports:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  const filteredTestData = testData.filter((test) => {
+    const matchesName = test.name
+      ?.toLowerCase()
+      .includes(testName.toLowerCase());
+    const matchesGroup = test.testGroupId?.name
+      ?.toLowerCase()
+      .includes(testGroup.toLowerCase());
+    const matchesCost = cost ? String(test.cost).includes(cost) : true;
+
+    return matchesName && matchesGroup && matchesCost;
+  });
+
+  const handleSearch = () => {
+    setVisibleRows(5);
   };
 
   const handleLoadMore = () => {
     setVisibleRows((prev) => prev + 5);
-    setPage((prev) => prev + 1);
   };
 
   const handleClear = () => {
     setTestName("");
     setTestGroup("");
     setCost("");
-    setPage(1);
+    setVisibleRows(5);
   };
 
   return (
@@ -88,7 +201,7 @@ const TestReport = () => {
             onChange={(e) => setCost(e.target.value)}
           />
           <button
-            onClick={fetchTestReports}
+            onClick={handleSearch}
             className="px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-600"
           >
             Search
@@ -123,32 +236,40 @@ const TestReport = () => {
                 </tr>
               </thead>
               <tbody>
-                {testData?.slice(0, visibleRows).map((test, index) => (
-                  <tr
-                    key={index}
-                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {test.serialNo}
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {test.name}
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {test.testGroupId?.name}
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {test.unit}
-                    </td>
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {test.cost}
+                {filteredTestData?.length > 0 ? (
+                  filteredTestData?.slice(0, visibleRows).map((test, index) => (
+                    <tr
+                      key={test._id}
+                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    >
+                      <td className="px-4 py-2 border-b border-gray-300">
+                        {test.serialNo}
+                      </td>
+                      <td className="px-4 py-2 border-b border-gray-300">
+                        {test.name}
+                      </td>
+                      <td className="px-4 py-2 border-b border-gray-300">
+                        {test.testGroupId?.name}
+                      </td>
+                      <td className="px-4 py-2 border-b border-gray-300">
+                        {test.unit}
+                      </td>
+                      <td className="px-4 py-2 border-b border-gray-300">
+                        {test.cost}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center py-4">
+                      No data found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           )}
-          {testData?.length >= visibleRows && (
+          {filteredTestData?.length > visibleRows && (
             <div className="flex justify-center mt-4">
               <button
                 onClick={handleLoadMore}
